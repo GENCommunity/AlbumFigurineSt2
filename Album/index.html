@@ -89,7 +89,46 @@
       justify-content: space-between;
       gap: 10px;
     }
-    #album-section, #shop-section {
+	
+	#info-card {
+	  display: none; /* Nascosto di default */
+	  width: 300px;
+	  flex-shrink: 0;
+	}
+
+	#main-content {
+	  position: relative; /* serve come riferimento per #info-card posizionato assoluto */
+	  display: flex;
+	  max-width: 1000px;
+	  margin: 20px auto;
+	  gap: 20px;
+	  justify-content: center;
+	  align-items: flex-start;
+	}
+
+	#album-section {
+	  flex-grow: 1;
+	  max-width: 700px;
+	  position: relative; /* aggiunto */
+	}
+	
+	/* Pannello info in posizione assoluta, sovrapposto a destra */
+	#info-card {
+	  display: none;
+	  position: absolute;  /* cambiato da statico a absolute */
+	  top: 10px;           /* distanza dal bordo superiore */
+	  left: 50%;           /* centro orizzontale */
+	  transform: translateX(-50%);
+	  width: 300px;
+	  background-color: #222; /* sfondo scuro per contrasto */
+	  padding: 15px;
+	  border-radius: 10px;
+	  box-shadow: 0 4px 15px rgba(0,0,0,0.7);
+	  z-index: 10; /* sopra tutto */
+	}
+
+	
+    #shop-section {
       display: none;
     }
   </style>
@@ -134,7 +173,17 @@
   </div>
 
   <!-- Album con pagine -->
-  <div id="album-section">
+<div id="main-content" style="display:flex; max-width: 1000px; margin: 20px auto; gap: 20px; justify-content: center; align-items: flex-start;">
+  <div id="info-card" class="container" style="display:none; width: 300px; flex-shrink: 0;">
+    <h3>Dettagli Figurina</h3>
+    <p id="info-numero"></p>
+    <p id="info-nome"></p>
+    <p id="info-debutto"></p>
+    <p id="info-titoli"></p>
+	<button class="close-btn">Chiudi</button>
+  </div>
+
+  <div id="album-section" style="flex-grow: 1; max-width: 700px;">
     <h2 id="welcome"></h2>
     <div class="album" id="album"></div>
     <div class="pagination-buttons">
@@ -142,19 +191,13 @@
       <button id="next-page" onclick="goToNextPage()">Pagina Successiva ➡</button>
     </div>
     <div class="container" style="max-width:250px;">
-	  <button onclick="vaiAlShop()">Shop</button>
+      <button onclick="vaiAlShop()">Shop</button>
       <button onclick="resetAlbum()">Reset Album</button>
       <button onclick="logout()">Logout</button>
     </div>
   </div>
-  
-	 <div id="info-card" class="container" style="display:none; margin-top:20px; max-width:400px;">
-	  <h3>Dettagli Figurina</h3>
-	  <p id="info-numero"></p>
-	  <p id="info-nome"></p>
-	  <p id="info-debutto"></p>
-	  <p id="info-titoli"></p>
-	</div>
+</div>
+
 
   
   
@@ -259,7 +302,7 @@
 	
 	let STICKER_DATA = {};
 
-	fetch('stickers.json')
+	fetch('https://raw.githubusercontent.com/GENCommunity/AlbumFigurineSt2/refs/heads/main/Album/stickers.json')
 	  .then(res => res.json())
 	  .then(data => {
 		STICKER_DATA = data;
@@ -423,7 +466,10 @@ function acquistaPacchetto(qta, costo) {
 	  document.getElementById("info-titoli").textContent = posseduta ? `Titoli vinti: ${data.titoli}` : "";
 	}
 
-		
+	document.querySelector('#info-card .close-btn').addEventListener('click', () => {
+	  document.getElementById('info-card').style.display = 'none';
+	});
+			
 
     function collectSticker(id) {
       let collected = JSON.parse(localStorage.getItem(getUserKey()) || "[]");
@@ -501,7 +547,7 @@ window.onload = () => {
   const savedUser = localStorage.getItem("currentUser");
   setMode("login");
 
-  fetch('stickers.json')
+  fetch('https://raw.githubusercontent.com/GENCommunity/AlbumFigurineSt2/refs/heads/main/Album/stickers.json')
     .then(res => res.json())
     .then(data => {
       STICKER_DATA = data;

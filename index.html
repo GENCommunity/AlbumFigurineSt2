@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <title>Album Figurine GENW - Verticale e grandi</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #222;
+      color: #fff;
+      margin: 0;
+      padding: 0;
+    }
+    h1 {
+      text-align: center;
+      padding: 20px;
+    }
+    .container {
+      max-width: 400px;
+      margin: 40px auto;
+      background: #333;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+    }
+    input, select {
+      padding: 10px;
+      width: 80%;
+      margin: 10px 0;
+      border: none;
+      border-radius: 5px;
+    }
+    button {
+      padding: 10px 20px;
+      margin-top: 10px;
+      cursor: pointer;
+      border: none;
+      border-radius: 6px;
+      background-color: #337ab7;
+      color: white;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+    }
+    button:hover:not(:disabled) {
+      background-color: #286090;
+    }
+    button:disabled {
+      background-color: #666;
+      cursor: not-allowed;
+    }
+	.album {
+	  max-width: 900px;
+	  margin: 20px auto;
+	  display: grid;
+	  grid-template-columns: repeat(5, 1fr);
+	  grid-auto-rows: 160px;
+	  gap: 15px;
+	}
+	.sticker-slot {
+	  width: 100%;
+	  height: 100%;
+	  background: #444;
+	  border: 2px dashed #888;
+	  display: flex;
+	  align-items: center;
+	  justify-content: center;
+	  cursor: pointer;
+	  user-select: none;
+	  font-weight: bold;
+	  font-size: 1.3rem;
+	  color: #ccc;
+	  transition: all 0.3s ease;
+	  border-radius: 12px;
+	  box-shadow: inset 0 0 8px #000;
+	  position: relative;
+	  overflow: hidden;
+	}
+	.sticker-slot.collected {
+	  border: 2px solid lime;
+	  color: transparent;
+	  background-size: contain;
+	  background-repeat: no-repeat;
+	  background-position: center;
+	}
+    .pagination-buttons {
+      max-width: 250px;
+      margin: 10px auto 30px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+	
+	#info-card {
+	  display: none; /* Nascosto di default */
+	  width: 300px;
+	  flex-shrink: 0;
+	}
+
+	#main-content {
+	  position: relative; /* serve come riferimento per #info-card posizionato assoluto */
+	  display: flex;
+	  max-width: 1000px;
+	  margin: 20px auto;
+	  gap: 20px;
+	  justify-content: center;
+	  align-items: flex-start;
+	}
+
+	#album-section {
+	  flex-grow: 1;
+	  max-width: 700px;
+	  position: relative; /* aggiunto */
+	}
+	
+	/* Pannello info in posizione assoluta, sovrapposto a destra */
+	#info-card {
+	  display: none;
+	  position: absolute;  /* cambiato da statico a absolute */
+	  top: 10px;           /* distanza dal bordo superiore */
+	  left: 50%;           /* centro orizzontale */
+	  transform: translateX(-50%);
+	  width: 300px;
+	  background-color: #222; /* sfondo scuro per contrasto */
+	  padding: 15px;
+	  border-radius: 10px;
+	  box-shadow: 0 4px 15px rgba(0,0,0,0.7);
+	  z-index: 10; /* sopra tutto */
+	}
+
+	
+    #shop-section {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Album Figurine GENW</h1>
+
+  <!-- Login/Register -->
+  <div id="login-section" class="container">
+    <h2 id="login-title">Login</h2>
+    <input type="text" id="username" placeholder="Nickname" autocomplete="off" /><br />
+    <input type="password" id="password" placeholder="Password" autocomplete="off" /><br />
+
+    <div id="secret-fields" style="display: none;">
+      <select id="secret-question">
+        <option value="">-- Seleziona una domanda segreta --</option>
+        <option value="Wrestler preferito?">Wrestler preferito?</option>
+        <option value="Città natale?">Città natale?</option>
+        <option value="Nome della tua prima stable?">Nome della tua prima stable?</option>
+      </select><br />
+      <input type="text" id="secret-answer" placeholder="Risposta segreta" autocomplete="off" /><br />
+    </div>
+
+    <button onclick="handleAction()">Conferma</button><br /><br />
+    <button onclick="setMode('login')">🔐 Login</button>
+    <button onclick="setMode('register')">📝 Registrati</button><br /><br />
+    <button onclick="showRecovery()">Recupera Password</button>
+  </div>
+
+  <!-- Recupero Password -->
+  <div id="recovery-section" class="container" style="display:none;">
+    <h2>Recupera Password</h2>
+    <input type="text" id="rec-username" placeholder="Nickname" autocomplete="off" /><br />
+    <button onclick="loadQuestion()">Mostra Domanda</button><br />
+    <div id="secret-container" style="display:none;">
+      <p id="display-question"></p>
+      <input type="text" id="rec-answer" placeholder="Risposta segreta" autocomplete="off" /><br />
+      <button onclick="verifyAnswer()">Mostra Password</button>
+      <p id="password-result" style="margin-top:10px;"></p>
+    </div>
+    <button onclick="backToLogin()">Indietro</button>
+  </div>
+
+  <!-- Album con pagine -->
+<div id="main-content" style="display:flex; max-width: 1000px; margin: 20px auto; gap: 20px; justify-content: center; align-items: flex-start;">
+  <div id="info-card" class="container" style="display:none; width: 300px; flex-shrink: 0;">
+    <h3>Dettagli Figurina</h3>
+    <p id="info-numero"></p>
+    <p id="info-nome"></p>
+    <p id="info-debutto"></p>
+    <p id="info-titoli"></p>
+	<button class="close-btn">Chiudi</button>
+  </div>
+
+  <div id="album-section" style="flex-grow: 1; max-width: 700px;">
+    <h2 id="welcome"></h2>
+    <div class="album" id="album"></div>
+    <div class="pagination-buttons">
+      <button id="prev-page" onclick="goToPrevPage()">⬅ Pagina Precedente</button>
+      <button id="next-page" onclick="goToNextPage()">Pagina Successiva ➡</button>
+    </div>
+    <div class="container" style="max-width:250px;">
+      <button onclick="vaiAlShop()">Shop</button>
+      <button onclick="resetAlbum()">Reset Album</button>
+      <button onclick="logout()">Logout</button>
+    </div>
+  </div>
+</div>
+
+
+  
+  
+  <!-- Shop -->
+	<div id="shop-section" class="container" style="display:none;">
+	  <h2>Shop Figurine</h2>
+	  <p>Crediti: <span id="crediti-utenti">0</span></p>
+	  <div id="slot-cards" class="slot-cards-container">
+	  <!-- Le card singole verranno mostrate qui -->
+	  </div>
+	  <button onclick="tornaAllAlbum()">Torna all'album</button>
+	  <h3>Compra un pacchetto:</h3>
+	  <button onclick="apriPacchetto()">Apri Pacchetto Giornaliero</button>
+	  <div id="pacchetto-aperto" style="margin-top:20px;"></div>
+	  <button onclick="acquistaPacchetto(3, 15)">🎁 3 Figurine - 15 crediti</button><br />
+	  <button onclick="acquistaPacchetto(5, 25)">🎁 5 Figurine - 25 crediti</button><br />
+	  <button onclick="acquistaPacchetto(10, 50)">🎁 10 Figurine - 50 crediti</button><br />
+	  
+	</div>
+
+
+  <script>
+    const TOTAL_STICKERS = 100;  // Max figurine
+    const STICKERS_PER_PAGE = 20; // per pagina
+    let currentPage = 1;
+    let currentUser = null;
+    let mode = "login"; // login o register
+
+    const encode = (s) => btoa(unescape(encodeURIComponent(s)));
+    const decode = (s) => decodeURIComponent(escape(atob(s)));
+
+    function setMode(selectedMode) {
+      mode = selectedMode;
+      document.getElementById("login-title").textContent = selectedMode === "login" ? "Login" : "Registrazione";
+      document.getElementById("secret-fields").style.display = selectedMode === "register" ? "block" : "none";
+      clearLoginInputs();
+    }
+
+    function clearLoginInputs() {
+      document.getElementById("username").value = "";
+      document.getElementById("password").value = "";
+      document.getElementById("secret-question").value = "";
+      document.getElementById("secret-answer").value = "";
+    }
+
+    function handleAction() {
+      const user = document.getElementById("username").value.trim().toLowerCase();
+      const pass = document.getElementById("password").value;
+      const question = document.getElementById("secret-question").value;
+      const answer = document.getElementById("secret-answer").value.trim();
+
+      if (!user || !pass) return alert("Inserisci nickname e password.");
+
+      const userKey = `user_${user}`;
+      const existing = JSON.parse(localStorage.getItem(userKey));
+
+      if (mode === "register") {
+        if (!question || !answer) return alert("Completa domanda e risposta segreta.");
+        if (existing) return alert("Utente già registrato.");
+        const data = {
+          password: encode(pass),
+          question: question,
+          answer: encode(answer.toLowerCase()),
+		  credits: 50,
+		  lastPackDate: ""
+        };
+        localStorage.setItem(userKey, JSON.stringify(data));
+        alert("Registrazione completata!");
+      } else {
+		if (user === "admin" && pass === "admingenw") {
+		  currentUser = "admin";
+		  localStorage.setItem("currentUser", "admin");
+		  window.location.href = "admin.html";
+		  return;
+		}
+
+		if (!existing) return alert("Utente non registrato.");
+		if (existing.password !== encode(pass)) return alert("Password errata.");
+
+		
+		existing.lastAccess = new Date().toISOString();  // oppure toLocaleString() se preferisci leggibile
+	    localStorage.setItem(userKey, JSON.stringify(existing));
+      }
+
+      currentUser = user;
+      localStorage.setItem("currentUser", currentUser);
+      currentPage = 1;
+	  daiBonusGiornaliero();
+      showAlbum();
+    }
+	
+	function daiBonusGiornaliero() {
+	  const oggi = new Date().toISOString().split("T")[0];
+	  const userKey = `user_${currentUser}`;
+	  const userData = JSON.parse(localStorage.getItem(userKey));
+
+	  if (userData.lastLoginBonusDate !== oggi) {
+		userData.credits = (userData.credits || 0) + 5;
+		userData.lastLoginBonusDate = oggi;
+		localStorage.setItem(userKey, JSON.stringify(userData));
+		alert("🎉 Bonus giornaliero: Hai ricevuto 5 crediti!");
+	  }
+	}
+
+
+    function showAlbum() {
+      document.getElementById("login-section").style.display = "none";
+      document.getElementById("recovery-section").style.display = "none";
+      document.getElementById("album-section").style.display = "block";
+      document.getElementById("welcome").textContent = `Benvenuto, ${currentUser.toUpperCase()}!`;
+      loadAlbum();
+    }
+	
+	let STICKER_DATA = {};
+
+	fetch('https://raw.githubusercontent.com/GENCommunity/AlbumFigurineSt2/refs/heads/main/Album/stickers.json')
+	  .then(res => res.json())
+	  .then(data => {
+		STICKER_DATA = data;
+		loadAlbum(); // Chiama qui l’album solo dopo aver caricato i dati
+	  });
+
+	
+	function vaiAlShop() {
+	mostraSlotCards();
+  document.getElementById("album-section").style.display = "none";
+  document.getElementById("shop-section").style.display = "block";
+  aggiornaCrediti();
+  document.getElementById("pacchetto-aperto").innerHTML = "";
+
+}
+
+function mostraSlotCards() {
+  const slotData = JSON.parse(localStorage.getItem("slotCards") || "[]");
+  const collezione = JSON.parse(localStorage.getItem(getUserKey()) || "[]");
+  const container = document.getElementById("slot-cards");
+  container.innerHTML = "";
+
+  // Filtra le figurine che l'utente NON possiede
+  const disponibili = slotData.filter(({ numero }) => !collezione.includes(numero));
+
+  if (disponibili.length === 0) {
+    container.innerHTML = "<p>Nessuna figurina acquistabile: le possiedi già tutte!</p>";
+    return;
+  }
+
+  disponibili.forEach(({ numero, costo }) => {
+    const card = document.createElement("div");
+    card.className = "shop-card";
+    card.innerHTML = `
+      <div style="text-align: center;">
+        <img src="stickers/${numero}.jpg" alt="Figurina ${numero}" style="width:100px; height:auto; border-radius:10px; box-shadow:0 0 5px #333;" />
+        <p style="margin:5px 0; font-weight:bold;">#${numero}</p>
+        <p>Costo: <strong>${costo}</strong> crediti</p>
+        <button onclick="acquistaSingolaFigurina(${numero}, ${costo})">Acquista</button>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+
+function acquistaSingolaFigurina(numero, costo) {
+  const userKey = `user_${currentUser}`;
+  const userData = JSON.parse(localStorage.getItem(userKey));
+  let collezione = JSON.parse(localStorage.getItem(getUserKey()) || "[]");
+
+  if ((userData.credits ?? 0) < costo) {
+    alert("Crediti insufficienti.");
+    return;
+  }
+
+  if (collezione.includes(numero)) {
+    alert("Hai già questa figurina.");
+    return;
+  }
+
+  collezione.push(numero);
+  userData.credits -= costo;
+
+  localStorage.setItem(userKey, JSON.stringify(userData));
+  localStorage.setItem(getUserKey(), JSON.stringify(collezione));
+  
+
+  aggiornaCrediti();
+  loadAlbum();  // o ricarica lo shop, se vuoi
+
+  alert(`Hai acquistato la figurina n° ${numero}!`);
+
+}
+
+
+function tornaAllAlbum() {
+  document.getElementById("shop-section").style.display = "none";
+  document.getElementById("album-section").style.display = "block";
+}
+
+function aggiornaCrediti() {
+  const userData = JSON.parse(localStorage.getItem(`user_${currentUser}`));
+  document.getElementById("crediti-utenti").textContent = userData.credits ?? 0;
+}
+
+function apriPacchetto() {
+  const oggi = new Date().toISOString().split("T")[0];
+  const userKey = `user_${currentUser}`;
+  const userData = JSON.parse(localStorage.getItem(userKey));
+
+  if (userData.lastPackDate === oggi) {
+    alert("Hai già aperto il pacchetto di oggi!");
+    return;
+  }
+
+  const figurine = [];
+  while (figurine.length < 3) {
+    const num = Math.floor(Math.random() * 100) + 1;
+    if (!figurine.includes(num)) figurine.push(num);
+  }
+
+  let collezione = JSON.parse(localStorage.getItem(getUserKey()) || "[]");
+  let nuovi = 0;
+  let creditiBonus = 0;
+
+  figurine.forEach(f => {
+    if (!collezione.includes(f)) {
+      collezione.push(f);
+      nuovi++;
+    } else {
+      creditiBonus += 5;
+    }
+  });
+
+  userData.lastPackDate = oggi;
+  userData.credits = (userData.credits || 0) + creditiBonus;
+
+  localStorage.setItem(userKey, JSON.stringify(userData));
+  localStorage.setItem(getUserKey(), JSON.stringify(collezione));
+
+  aggiornaCrediti();
+  loadAlbum();
+  
+let immaginiHTML = figurine.map(num => `
+  <div style="display:inline-block; margin:5px; text-align:center;">
+    <img src="stickers/${num}.jpg" alt="Figurina ${num}" style="height:120px; border:2px solid #ccc; border-radius:8px;" />
+    <div style="color:#fff; margin-top:5px;">#${num}</div>
+  </div>
+`).join("");
+
+document.getElementById("pacchetto-aperto").innerHTML = `...${immaginiHTML}...`;
+
+
+document.getElementById("pacchetto-aperto").innerHTML = `
+  <div style="margin-bottom:10px;">Hai ricevuto le figurine:</div>
+  <div style="display:flex; flex-wrap:wrap; justify-content:center;">${immaginiHTML}</div>
+  <p>${nuovi < figurine.length ? `${figurine.length - nuovi} doppioni convertiti in ${creditiBonus} crediti.` : "Tutte nuove!"}</p>
+`;
+
+}
+
+function acquistaPacchetto(qta, costo) {
+  // 🔑 Recupera la chiave dell'utente corrente e i suoi dati dal localStorage
+  const userKey = `user_${currentUser}`;
+  const userData = JSON.parse(localStorage.getItem(userKey));
+
+  // ❌ Verifica se l'utente ha abbastanza crediti per acquistare il pacchetto
+  if ((userData.credits ?? 0) < costo) {
+    alert("Crediti insufficienti.");
+    return;
+  }
+
+  // 🎲 Genera un pacchetto di 'qta' figurine casuali (senza duplicati)
+  const figurine = [];
+  while (figurine.length < qta) {
+    const num = Math.floor(Math.random() * 100) + 1;
+    if (!figurine.includes(num)) figurine.push(num);
+  }
+
+  // 📦 Recupera la collezione attuale dell’utente (o array vuoto se assente)
+  let collezione = JSON.parse(localStorage.getItem(getUserKey()) || "[]");
+  let nuovi = 0;           // Conta quante figurine nuove vengono aggiunte
+  let creditiBonus = 0;    // Conta i crediti ottenuti da doppioni
+
+  // 🔁 Per ogni figurina ricevuta:
+  figurine.forEach(f => {
+    if (!collezione.includes(f)) {
+      // ✅ Nuova figurina: aggiungila alla collezione
+      collezione.push(f);
+      nuovi++;
+    } else {
+      // 🔁 Doppione: assegna 5 crediti bonus
+      creditiBonus += 5;
+    }
+  });
+
+  // 💰 Aggiorna i crediti dell’utente:
+  // crediti residui = crediti - costo + bonus da doppioni
+  userData.credits = (userData.credits || 0) - costo + creditiBonus;
+
+  // 💾 Salva i dati aggiornati dell’utente e della collezione nel localStorage
+  localStorage.setItem(userKey, JSON.stringify(userData));
+  localStorage.setItem(getUserKey(), JSON.stringify(collezione));
+
+  // 🔄 Aggiorna l'interfaccia (crediti e album visivo)
+  aggiornaCrediti();
+  loadAlbum();
+
+  // 📢 Mostra il risultato del pacchetto aperto nell’HTML
+let immaginiHTML = figurine.map(num => `
+  <div style="display:inline-block; margin:5px; text-align:center;">
+    <img src="stickers/${num}.jpg" alt="Figurina ${num}" style="height:120px; border:2px solid #ccc; border-radius:8px;" />
+    <div style="color:#fff; margin-top:5px;">#${num}</div>
+  </div>
+`).join("");
+
+document.getElementById("pacchetto-aperto").innerHTML = `...${immaginiHTML}...`;
+
+
+document.getElementById("pacchetto-aperto").innerHTML = `
+  <div style="margin-bottom:10px;">Hai ricevuto le figurine:</div>
+  <div style="display:flex; flex-wrap:wrap; justify-content:center;">${immaginiHTML}</div>
+  <p>${nuovi < figurine.length ? `${figurine.length - nuovi} doppioni convertiti in ${creditiBonus} crediti.` : "Tutte nuove!"}</p>
+`;
+}
+
+
+
+    function logout() {
+      localStorage.removeItem("currentUser");
+      currentUser = null;
+      currentPage = 1;
+      clearLoginInputs();
+      document.getElementById("album-section").style.display = "none";
+      document.getElementById("login-section").style.display = "block";
+    }
+
+    function getUserKey() {
+      return `stickers_${currentUser}`;
+    }
+
+    function loadAlbum() {
+      const albumEl = document.getElementById("album");
+      albumEl.innerHTML = "";
+      const collected = JSON.parse(localStorage.getItem(getUserKey()) || "[]");
+
+      const startIndex = (currentPage - 1) * STICKERS_PER_PAGE + 1;
+      const endIndex = Math.min(currentPage * STICKERS_PER_PAGE, TOTAL_STICKERS);
+
+      for (let i = startIndex; i <= endIndex; i++) {
+        const slot = document.createElement("div");
+        slot.className = "sticker-slot";
+        slot.textContent = `#${i}`;
+        if (collected.includes(i)) {
+          slot.classList.add("collected");
+          slot.style.backgroundImage = `url('stickers/${i}.jpg')`;
+        }
+        slot.onclick = () => mostraInfoFigurina(i);
+        albumEl.appendChild(slot);
+      }
+      updatePaginationButtons();
+    }
+	
+	function mostraInfoFigurina(id) {
+	  const data = STICKER_DATA[id.toString()];
+	  if (!data) {
+		console.warn("Nessun dato trovato per l'ID", id);
+		return;
+	  }
+
+	  const raccolte = JSON.parse(localStorage.getItem(getUserKey()) || "[]");
+	  const posseduta = raccolte.includes(id);
+
+	  document.getElementById("info-card").style.display = "block";
+	  document.getElementById("info-numero").textContent = `Numero Figurina: ${id}`;
+	  document.getElementById("info-nome").textContent = `Nome: ${data.nome}`;
+	  document.getElementById("info-debutto").textContent = posseduta ? `Stagione debutto: Stagione ${data.debutto}` : "";
+	  document.getElementById("info-titoli").textContent = posseduta ? `Titoli vinti: ${data.titoli}` : "";
+	}
+
+	document.querySelector('#info-card .close-btn').addEventListener('click', () => {
+	  document.getElementById('info-card').style.display = 'none';
+	});
+			
+
+    function collectSticker(id) {
+      let collected = JSON.parse(localStorage.getItem(getUserKey()) || "[]");
+      if (!collected.includes(id)) {
+        collected.push(id);
+        localStorage.setItem(getUserKey(), JSON.stringify(collected));
+        loadAlbum();
+      }
+    }
+
+    function resetAlbum() {
+      if (confirm(`Azzerare l'album di ${currentUser}?`)) {
+        localStorage.removeItem(getUserKey());
+        loadAlbum();
+      }
+    }
+
+    function updatePaginationButtons() {
+      const prevBtn = document.getElementById("prev-page");
+      const nextBtn = document.getElementById("next-page");
+      prevBtn.disabled = currentPage === 1;
+      nextBtn.disabled = currentPage * STICKERS_PER_PAGE >= TOTAL_STICKERS;
+    }
+    function goToPrevPage() {
+      if (currentPage > 1) {
+        currentPage--;
+        loadAlbum();
+      }
+    }
+    function goToNextPage() {
+      if (currentPage * STICKERS_PER_PAGE < TOTAL_STICKERS) {
+        currentPage++;
+        loadAlbum();
+      }
+    }
+
+    // RECUPERO PASSWORD
+    function showRecovery() {
+      document.getElementById("login-section").style.display = "none";
+      document.getElementById("recovery-section").style.display = "block";
+      document.getElementById("secret-container").style.display = "none";
+      document.getElementById("password-result").textContent = "";
+      document.getElementById("rec-username").value = "";
+      document.getElementById("rec-answer").value = "";
+    }
+
+    function backToLogin() {
+      document.getElementById("recovery-section").style.display = "none";
+      document.getElementById("login-section").style.display = "block";
+    }
+
+    function loadQuestion() {
+      const user = document.getElementById("rec-username").value.trim().toLowerCase();
+      if (!user) return alert("Inserisci nickname.");
+      const data = JSON.parse(localStorage.getItem(`user_${user}`));
+      if (!data) return alert("Utente non registrato.");
+      document.getElementById("display-question").textContent = `Domanda: ${data.question}`;
+      document.getElementById("secret-container").style.display = "block";
+      document.getElementById("password-result").textContent = "";
+    }
+
+    function verifyAnswer() {
+      const user = document.getElementById("rec-username").value.trim().toLowerCase();
+      const answer = document.getElementById("rec-answer").value.trim().toLowerCase();
+      const data = JSON.parse(localStorage.getItem(`user_${user}`));
+      if (!data) return alert("Utente non registrato.");
+      if (encode(answer) === data.answer) {
+        document.getElementById("password-result").textContent = `Password: ${decode(data.password)}`;
+      } else {
+        alert("Risposta segreta errata.");
+      }
+    }
+
+window.onload = () => {
+  const savedUser = localStorage.getItem("currentUser");
+  setMode("login");
+
+  fetch('https://raw.githubusercontent.com/GENCommunity/AlbumFigurineSt2/refs/heads/main/Album/stickers.json')
+    .then(res => res.json())
+    .then(data => {
+      STICKER_DATA = data;
+      if (savedUser) {
+        currentUser = savedUser;
+        daiBonusGiornaliero();
+        showAlbum();
+      }
+    });
+};
+
+  </script>
+</body>
+</html>
